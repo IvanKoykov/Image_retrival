@@ -32,10 +32,10 @@ class TripletNetwork(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
 
-            nn.Linear(1024, 128),
-            nn.ReLU(inplace=True),
+            nn.Linear(1024, 128))
+            #nn.ReLU(inplace=True),
 
-            nn.Linear(128, 2))
+            #nn.Linear(128, 2))
 
     def forward_once(self, x):
         # Forward pass

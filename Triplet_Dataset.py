@@ -51,6 +51,8 @@ def make_pairs(images, labels,idx):
     for idxA in range(len(images)):
         # grab the current image and label belonging to the current
         # iteration
+        if labels[idxA] == 'new_whale':
+            continue
         currentImage = images[idxA]
         label = labels[idxA]
         # randomly pick an image that belongs to the *same* class
