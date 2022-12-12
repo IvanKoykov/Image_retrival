@@ -18,9 +18,8 @@ from torch.autograd import Variable
 from PIL import Image
 import PIL.ImageOps
 import os
-from Whael_Dataset import SiameseDataset
+
 from Siamese_Network import SiameseNetwork
-from Contrastive_loss import ContrastiveLoss
 
 testing_csv=config.training_csv_contrastive
 testing_dir=config.training_dir
@@ -29,17 +28,16 @@ query_path='query.jpg'
 # TODO добавить в конфиг
 df = pd.read_csv(testing_csv)
 
-#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = SiameseNetwork()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = SiameseNetwork().to(device)
 model.load_state_dict(torch.load(path_model))
 model.eval()
 
 transform=transforms.Compose(
             [transforms.Resize((128, 128)), transforms.ToTensor()])
 
-criterion = ContrastiveLoss()
 if __name__ == '__main__':
-
+    df = pd.read_csv(testing_csv)
     list_with_distance=[]
     for filename in os.listdir(testing_dir):
         img_path = os.path.join(testing_dir, filename)
@@ -53,7 +51,7 @@ if __name__ == '__main__':
             img1 = transform(img1)
         img0 = img0.unsqueeze(0)
         img1 = img1.unsqueeze(0)
-        output1, output2 = model(img0, img1)
+        output1, output2 = model(img0.to(device), img1.to(device))
 
         #loss_contrastive = criterion(output1,output2,label)
         eucledian_distance = F.pairwise_distance(output1, output2)
@@ -62,8 +60,10 @@ if __name__ == '__main__':
     axes = []
     fig = plt.figure(figsize=(8, 8))
     list_with_distance.sort() # отсортированные по расстоянию изображения
-    #ToDO добавить сопаставление изображений из list_with_distance и их классами
+    top_n=[]
+    #ToDO добавить сопоставление изображений из list_with_distance и их классами
     for i in range(5):
+        top_n.append(list_with_distance[i][1])
         score = list_with_distance[i]
         axes.append(fig.add_subplot(5, 6, i + 1))
         subplot_title = str(score[0])
@@ -72,3 +72,10 @@ if __name__ == '__main__':
         plt.imshow(Image.open(score[1]))
     fig.tight_layout()
     plt.show()
+
+    id_dict=[]
+    for name, id in df.values:
+        if name in top_n:
+            id_dict.append(id)
+    print(id_dict)
+
