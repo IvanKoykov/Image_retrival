@@ -1,28 +1,32 @@
+import os
+
 import numpy as np
 import pandas as pd
-from PIL import Image
-import os
 import torch
+from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
-#preprocessing and loading the dataset
+
+# preprocessing and loading the dataset
 class SiameseDataset(Dataset):
-    def __init__(self,training_csv=None,training_dir=None,idx=None,transform=None):
+    def __init__(self, training_csv=None, training_dir=None, idx=None, transform=None):
         # used to prepare the labels and images path
-        self.train_df=pd.read_csv(training_csv)
-        #self.train_df.columns =["Image","ID"]
+        self.train_df = pd.read_csv(training_csv)
+        # self.train_df.columns =["Image","ID"]
         self.train_dir = training_dir
         self.transform = transform
-        self.idx=idx
-        self.pairTrain, self.labelTrain = make_pairs(self.train_df['Image'], self.train_df['Id'], self.idx)
+        self.idx = idx
+        self.pairTrain, self.labelTrain = make_pairs(
+            self.train_df["Image"], self.train_df["Id"], self.idx
+        )
 
-    def __getitem__(self,index):
+    def __getitem__(self, index):
         # getting the image path
-        #breakpoint()
-        image1_path=os.path.join(self.train_dir,self.pairTrain[index,0])
-        image2_path=os.path.join(self.train_dir,self.pairTrain[index,1])
+        # breakpoint()
+        image1_path = os.path.join(self.train_dir, self.pairTrain[index, 0])
+        image2_path = os.path.join(self.train_dir, self.pairTrain[index, 1])
 
-        #breakpoint()
+        # breakpoint()
         # Loading the image
         img0 = Image.open(image1_path)
         img1 = Image.open(image2_path)
@@ -32,12 +36,18 @@ class SiameseDataset(Dataset):
         if self.transform is not None:
             img0 = self.transform(img0)
             img1 = self.transform(img1)
-        #breakpoint()
-        return img0, img1 , torch.from_numpy(np.array([self.labelTrain[index,0]],dtype=np.float32))
+        # breakpoint()
+        return (
+            img0,
+            img1,
+            torch.from_numpy(np.array([self.labelTrain[index, 0]], dtype=np.float32)),
+        )
+
     def __len__(self):
         return len(self.train_df)
 
-def make_pairs(images, labels,idx):
+
+def make_pairs(images, labels, idx):
     # initialize two empty lists to hold the (image, image) pairs and
     # labels to indicate if a pair is positive or negative
     pairImages = []
@@ -49,7 +59,7 @@ def make_pairs(images, labels,idx):
     for idxA in range(len(images)):
         # grab the current image and label belonging to the current
         # iteration
-        if labels[idxA] == 'new_whale':
+        if labels[idxA] == "new_whale":
             continue
         currentImage = images[idxA]
         label = labels[idxA]
