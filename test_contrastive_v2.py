@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -19,7 +20,6 @@ query_filename = "0a00c7a0f.jpg"
 
 # TODO добавить в конфиг
 df = pd.read_csv(testing_csv)
-df = df.drop(df[df["Id"] == "new_whale"].index)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = SiameseNetwork()
@@ -27,31 +27,29 @@ model.load_state_dict(torch.load(path_model))
 model.to(device)
 model.eval()
 
+with open('database.pkl', 'rb') as f:
+    filenames, whale_ids, embeddings = pickle.load(f)
+
 transform = transforms.Compose([transforms.Resize((128, 128)), transforms.ToTensor()])
 
 criterion = ContrastiveLoss()
 if __name__ == "__main__":
 
     list_with_distance = []
-    for _, row in tqdm(df.iterrows(), total=df.shape[0]):
-        filename = row["Image"]
-        whale_id = row["Id"]
-        img_path = os.path.join(images_dir, filename)
-        img0 = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
-        img1 = Image.open(img_path)
-        img0 = img0.convert("L")
-        img1 = img1.convert("L")
+
+    for i, item in enumerate(tqdm(embeddings)):
+
+        img = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
+        img = img.convert("L")
         # Apply image transformations
         if transform is not None:
-            img0 = transform(img0)
-            img1 = transform(img1)
-        img0 = img0.unsqueeze(0)
-        img1 = img1.unsqueeze(0)
-        output1, output2 = model.predict(img0, img1)
+            img = transform(img)
+        img = img.unsqueeze(0)
+        output = model.predict(img)
 
-        # loss_contrastive = criterion(output1,output2,label)
-        eucledian_distance = F.pairwise_distance(output1, output2).to('cpu').numpy()[0]
-        list_with_distance.append([eucledian_distance, filename, whale_id])
+        item = item.to(device)
+        eucledian_distance = F.pairwise_distance(output, item).to('cpu').numpy()[0]
+        list_with_distance.append([eucledian_distance, filenames[i], whale_ids[i]])
 
     axes = []
     fig = plt.figure(figsize=(8, 8))

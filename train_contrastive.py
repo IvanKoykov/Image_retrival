@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pandas as pd
 import torch
@@ -28,7 +30,7 @@ def train(optimizer, criterion):
     loss = []
     counter = []
     iteration_number = 0
-    for epoch in range(1, config.epochs):
+    for epoch in range(0, config.epochs):
         siamese_dataset = SiameseDataset(
             training_csv,
             training_dir,
@@ -86,5 +88,9 @@ if __name__ == "__main__":
     # set the device to cuda
 
     model = train(optimizer, criterion)
+    df = df.drop(df[df["Id"] == "new_whale"].index)
+    embeddings = model.generate_embeddings(img_dir=training_dir, labels=df)
+    with open('database.pkl', 'wb') as f:
+        pickle.dump(embeddings, f)
     torch.save(model.to("cpu").state_dict(), "model_contrastive.pt")
     print("Model Saved Successfully")
