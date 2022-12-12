@@ -24,15 +24,15 @@ from Contrastive_loss import ContrastiveLoss
 
 testing_csv=config.training_csv_contrastive
 testing_dir=config.training_dir
-path_model=''
-query_path=''
+path_model='model_contrastive.pt'
+query_path='query.jpg'
 # TODO добавить в конфиг
 df = pd.read_csv(testing_csv)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = SiameseNetwork()
-#model.load_state_dict(torch.load(path_model))
-#model.eval()
+model.load_state_dict(torch.load(path_model))
+model.eval()
 
 transform=transforms.Compose(
             [transforms.Resize((128, 128)), transforms.ToTensor()])
@@ -51,8 +51,9 @@ if __name__ == '__main__':
         if transform is not None:
             img0 = transform(img0)
             img1 = transform(img1)
-
-        output1, output2 = model(img0.to(device), img1.to(device))
+        img0 = img0.unsqueeze(0)
+        img1 = img1.unsqueeze(0)
+        output1, output2 = model(img0, img1)
 
         #loss_contrastive = criterion(output1,output2,label)
         eucledian_distance = F.pairwise_distance(output1, output2)
