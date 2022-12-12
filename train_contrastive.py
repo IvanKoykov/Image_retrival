@@ -12,10 +12,8 @@ from Siamese_Network import SiameseNetwork
 from utils import imshow
 from Whael_Dataset import SiameseDataset
 
-training_dir = config.training_dir
-testing_dir = config.testing_dir
+training_dir = config.images_dir
 training_csv = config.training_csv_contrastive
-testing_csv = config.testing_csv
 df = pd.read_csv(training_csv)
 numClasses = np.unique(df["Id"])
 idx = {
