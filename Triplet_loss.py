@@ -1,7 +1,8 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
+
 
 class TripletLoss(torch.nn.Module):
     """
@@ -17,6 +18,8 @@ class TripletLoss(torch.nn.Module):
 
         squarred_distance_2 = (anchor - negative).pow(2).sum(1)
 
-        triplet_loss = F.relu(self.margin + squarred_distance_1 - squarred_distance_2).mean()
+        triplet_loss = F.relu(
+            self.margin + squarred_distance_1 - squarred_distance_2
+        ).mean()
 
         return triplet_loss

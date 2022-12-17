@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def imshow(img):
-    img = img / 2 + 0.5     # денормализуем
+    img = img / 2 + 0.5  # денормализуем
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
+
+
 def make_pairs(images, labels):
     # initialize two empty lists to hold the (image, image) pairs and
     # labels to indicate if a pair is positive or negative
