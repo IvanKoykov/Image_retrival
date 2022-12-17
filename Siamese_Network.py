@@ -1,5 +1,14 @@
+import os
+from pathlib import Path
+
+import numpy as np
+import pandas
+import pandas as pd
 import torch
 import torch.nn as nn
+from PIL import Image
+from torchvision.transforms import transforms
+from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -32,10 +41,14 @@ class SiameseNetwork(nn.Module):
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=0.5),
             nn.Linear(1024, 128),
+            nn.ReLU(inplace=True),
+            nn.Linear(128, 16),
         )
-        # nn.ReLU(inplace=True)
 
-        # nn.Linear(128, 2))
+        self.transform = transforms.Compose([
+            transforms.Resize((128, 128)),
+            transforms.ToTensor()
+        ])
 
     def forward_once(self, x):
         x = x.to(device)
@@ -53,10 +66,28 @@ class SiameseNetwork(nn.Module):
         output2 = self.forward_once(input2)
         return output1, output2
 
-    def predict(self, input1, input2):
+    def predict(self, input):
         with torch.no_grad():
-            # forward pass of input 1
-            output1 = self.forward_once(input1)
-            # forward pass of input 2
-            output2 = self.forward_once(input2)
-        return output1, output2
+            output = self.forward_once(input)
+        return output
+
+    def generate_embeddings(self, img_dir: str, labels: pd.DataFrame):
+        embeddings = []
+        ids = []
+        names = []
+        for _, row in tqdm(labels.iterrows(), total=labels.shape[0], desc="Generating database"):
+            filename = row["Image"]
+            img_path = os.path.join(img_dir, filename)
+            img = Image.open(img_path)
+            img = img.convert("L")
+            # Apply image transformations
+            img_tensor = self.transform(img)
+            img_tensor = img_tensor.unsqueeze(0)
+            with torch.no_grad():
+                res = self.forward_once(img_tensor).to('cpu')
+            embeddings.append(res)
+            ids.append(row["Id"])
+            names.append(filename)
+
+        res = [names, ids, embeddings]
+        return res
