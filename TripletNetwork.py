@@ -63,12 +63,10 @@ class TripletNetwork(nn.Module):
         output3 = self.forward_once(input3)
         return output1, output2, output3
 
-    def predict(self, input1, input2, input3):
+    def predict(self, input):
         with torch.no_grad():
-            output1 = self.forward_once(input1)
-            output2 = self.forward_once(input2)
-            output3 = self.forward_once(input3)
-        return output1, output2, output3
+            output = self.forward_once(input)
+        return output
 
     def generate_embeddings(self, img_dir: Path, labels: Path):
         df = pandas.read_csv(labels)
@@ -83,5 +81,4 @@ class TripletNetwork(nn.Module):
             img_tensor = img_tensor.unsqueeze(0)
             res = self.forward_once(img_tensor).to('cpu')
             embeddings.append(res.numpy)
-
         return np.array(embeddings)

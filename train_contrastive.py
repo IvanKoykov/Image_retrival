@@ -1,4 +1,5 @@
 import pickle
+from torch.utils.tensorboard import SummaryWriter
 
 import numpy as np
 import pandas as pd
@@ -11,33 +12,36 @@ from tqdm import tqdm
 import config
 from Contrastive_loss import ContrastiveLoss
 from Siamese_Network import SiameseNetwork
-from utils import imshow
+from utils import imshow,recall_k
 from Whael_Dataset import SiameseDataset
 
 training_dir = config.images_dir
 training_csv = config.training_csv_contrastive
+#training_csv='old_train.csv'
+testing_csv=config.testing_csv
+
 df = pd.read_csv(training_csv)
+df_test=pd.read_csv(testing_csv)
 numClasses = np.unique(df["Id"])
 idx = {
     numClasses[i]: np.where(df["Id"] == numClasses[i])[0]
     for i in range(len(numClasses))
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
+writer = SummaryWriter("logs")
+transform=transforms.Compose( [transforms.Resize((128, 128)), transforms.ToTensor()] )
+#breakpoint()
 # train the model
 def train(optimizer, criterion):
-    loss = []
-    counter = []
-    iteration_number = 0
+    #loss = []
+    #counter = []
+    #iteration_number = 0
     for epoch in range(0, config.epochs):
         siamese_dataset = SiameseDataset(
             training_csv,
             training_dir,
             idx,
-            transform=transforms.Compose(
-                [transforms.Resize((128, 128)), transforms.ToTensor()]
-            ),
+            transform=transform,
         )
         train_dataloader = DataLoader(
             siamese_dataset,
@@ -55,10 +59,17 @@ def train(optimizer, criterion):
             loss_contrastive = criterion(output1, output2, label)
             loss_contrastive.backward()
             optimizer.step()
+        filenames, whale_ids, embeddings=net.generate_embeddings(img_dir=training_dir, labels=df)
+        query_filename_id=df_test.sample(n=1)
+        recall=recall_k(filenames,whale_ids,embeddings,transform,net,training_dir,query_filename_id,device)
+        writer.add_scalar("Loss/train",loss_contrastive.item(),epoch)
+        writer.add_scalar("recall@k",recall,epoch)
+        torch.save(net.to("cpu").state_dict(), "models/model_contrastive{}.pt".format(epoch))
         print("Epoch {}\n Current loss {}\n".format(epoch, loss_contrastive.item()))
-        iteration_number += 10
-        counter.append(iteration_number)
-        loss.append(loss_contrastive.item())
+        #iteration_number += 10
+        #counter.append(iteration_number)
+        #loss.append(loss_contrastive.item())
+    writer.close()
     return net
 
 

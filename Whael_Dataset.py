@@ -20,13 +20,14 @@ class SiameseDataset(Dataset):
             self.train_df["Image"], self.train_df["Id"], self.idx
         )
 
+    #index 8 is out  of  bounds  for axis 0 with size 8
     def __getitem__(self, index):
         # getting the image path
-        # breakpoint()
+        #breakpoint()
         image1_path = os.path.join(self.train_dir, self.pairTrain[index, 0])
         image2_path = os.path.join(self.train_dir, self.pairTrain[index, 1])
 
-        # breakpoint()
+        #breakpoint()
         # Loading the image
         img0 = Image.open(image1_path)
         img1 = Image.open(image2_path)

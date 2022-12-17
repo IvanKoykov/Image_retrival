@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pandas as pd
 import torch
@@ -29,7 +31,7 @@ def train(optimizer, criterion):
     loss = []
     counter = []
     iteration_number = 0
-    for epoch in range(1, config.epochs):
+    for epoch in range(0, config.epochs):
         triplet_dataset = SiameseDataset_Triplet(
             training_csv_triplet,
             training_dir,
@@ -46,20 +48,24 @@ def train(optimizer, criterion):
         )
         for data in tqdm(train_dataloader):
             img0, img1, img2 = data
+            img0 = img0.cuda() if device == "cuda" else img0
+            img1 = img1.cuda() if device == "cuda" else img1
+            img2 = img2.cuda() if device == "cuda" else img2
             optimizer.zero_grad()
             output1, output2, output3 = net(img0, img1, img2)
-            loss_contrastive = criterion(output1, output2, output3)
-            loss_contrastive.backward()
+            loss_triplet = criterion(output1, output2, output3)
+            loss_triplet.backward()
             optimizer.step()
-        print("Epoch {}\n Current loss {}\n".format(epoch, loss_contrastive.item()))
+
+        print("Epoch {}\n Current loss {}\n".format(epoch, loss_triplet.item()))
         iteration_number += 10
         counter.append(iteration_number)
-        loss.append(loss_contrastive.item())
+        loss.append(loss_triplet.item())
     return net
 
 
 if __name__ == "__main__":
-
+    print("Reading data")
     triplet_dataset = SiameseDataset_Triplet(
         training_csv_triplet,
         training_dir,
@@ -87,5 +93,9 @@ if __name__ == "__main__":
     # set the device to cuda
 
     model = train(optimizer, criterion)
+    df = df.drop(df[df["Id"] == "new_whale"].index)
+    embeddings = model.generate_embeddings(img_dir=training_dir, labels=df)
+    with open('database_triplet.pkl', 'wb') as f:
+        pickle.dump(embeddings, f)
     torch.save(model.to("cpu").state_dict(), "model_triplet.pt")
     print("Model Saved Successfully")
