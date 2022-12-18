@@ -45,3 +45,26 @@ def recall_k(filename, whale_ids, embeddings, transform,
 
     recall = sum(recall_per_id) / len(recall_per_id)
     return recall
+
+def best_images(filename, whale_ids, embeddings, transform,
+             model, images_dir, query_filename,query_whale_id, device):
+
+    breakpoint()
+    #query_filename = row[0]
+    #query_whale_id = row[1]
+    img = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
+    img = img.convert("L")
+    # Apply image transformations
+    if transform is not None:
+        img = transform(img)
+    img = img.unsqueeze(0)
+    output = model.predict(img)
+
+    list_with_distance = []
+    for i, item in enumerate(tqdm(embeddings)):
+        item = item.to(device)
+        eucledian_distance = F.pairwise_distance(output, item).to('cpu').numpy()[0]
+        list_with_distance.append([eucledian_distance, filename[i], whale_ids[i]])
+    list_with_distance.sort()
+    return list_with_distance,query_whale_id,query_filename
+
