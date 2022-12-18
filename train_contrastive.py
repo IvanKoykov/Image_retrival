@@ -29,7 +29,7 @@ idx = {
     for i in range(len(numClasses))
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-writer = SummaryWriter("logs")
+writer = SummaryWriter("logs/contrastive", comment="contrastive_loss")
 transform = transforms.Compose([transforms.Resize((128, 128)), transforms.ToTensor()])
 
 
@@ -72,7 +72,7 @@ def train(optimizer, criterion, scheduler):
             loss_contrastive.backward()
             optimizer.step()
         mean_train_loss = sum(train_losses) / len(train_losses)
-        scheduler.step(mean_train_loss)
+        scheduler.step()
 
         filenames, whale_ids, embeddings = net.generate_embeddings(img_dir=training_dir, labels=df)
 
@@ -98,21 +98,21 @@ def train(optimizer, criterion, scheduler):
 
         if recall_5 > recall_5_best:
             recall_5_best = recall_5
-            torch.save(net.state_dict(), f"models/model_contrastive_best_recall_5.pt")
-            with open(f"models/embeddings_best_recall_5.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/contrastive/model_contrastive_best_recall_5.pt")
+            with open(f"models/contrastive/embeddings_best_recall_5.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         if recall_10 > recall_10_best:
             recall_10_best = recall_10
-            torch.save(net.state_dict(), f"models/model_contrastive_best_recall_10.pt")
-            with open(f"models/embeddings_best_recall_10.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/contrastive/model_contrastive_best_recall_10.pt")
+            with open(f"models/contrastive/embeddings_best_recall_10.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         if mean_train_loss < best_mean_train_loss:
             best_mean_train_loss = mean_train_loss
-            torch.save(net.state_dict(), f"models/model_contrastive_best.pt")
-            with open(f"models/embeddings_best.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/contrastive/model_contrastive_best.pt")
+            with open(f"models/contrastive/embeddings_best.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         print(f"Epoch {epoch}\n Current loss {mean_train_loss}\n")
         # iteration_number += 10
@@ -141,14 +141,14 @@ if __name__ == "__main__":
     # imshow(torchvision.utils.make_grid(concatenated))
     # print(example_batch[2].numpy())
     net = SiameseNetwork()
-    if os.path.isfile("models/model_contrastive_best.pt"):
-        net.load_state_dict(torch.load("models/model_contrastive_best.pt"))
+    if os.path.isfile("models/contrastive/model_contrastive_best.pt"):
+        net.load_state_dict(torch.load("models/contrastive/model_contrastive_best.pt"))
     net.to(device)
     # Decalre Loss Function
     criterion = ContrastiveLoss()
     # Declare Optimizer
     optimizer = torch.optim.AdamW(net.parameters(), lr=1e-2)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True, patience=5, eps=1e-5)
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, verbose=True, gamma=0.9)
     # set the device to cuda
 
     model = train(optimizer, criterion, scheduler)

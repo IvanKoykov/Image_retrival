@@ -19,7 +19,7 @@ def recall_k(filename, whale_ids, embeddings, transform,
              top_n=5):
 
     recall_per_id = []
-    for _, row in query_filename_id.iterrows():
+    for _, row in tqdm(query_filename_id.iterrows(), total=query_filename_id.shape[0]):
         query_filename = row[0]
         query_whale_id = row[1]
         img = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
@@ -31,7 +31,7 @@ def recall_k(filename, whale_ids, embeddings, transform,
         output = model.predict(img)
 
         list_with_distance = []
-        for i, item in enumerate(tqdm(embeddings)):
+        for i, item in enumerate(embeddings):
             item = item.to(device)
             eucledian_distance = F.pairwise_distance(output, item).to('cpu').numpy()[0]
             list_with_distance.append([eucledian_distance, filename[i], whale_ids[i]])
