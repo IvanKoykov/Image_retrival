@@ -33,16 +33,16 @@ class SiameseNetwork(nn.Module):
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, stride=2),
-            nn.Dropout2d(p=0.3),
+            nn.Dropout(p=0.3),
         )
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
             nn.Linear(43264, 1024),
             nn.ReLU(inplace=True),
-            nn.Dropout2d(p=0.5),
+            nn.Dropout(p=0.5),
             nn.Linear(1024, 128),
             nn.ReLU(inplace=True),
-            nn.Linear(128, 16),
+            nn.Linear(128, 2),
         )
 
         self.transform = transforms.Compose([
