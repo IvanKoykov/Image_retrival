@@ -49,7 +49,6 @@ def recall_k(filename, whale_ids, embeddings, transform,
 def best_images(filename, whale_ids, embeddings, transform,
              model, images_dir, query_filename,query_whale_id, device):
 
-    breakpoint()
     #query_filename = row[0]
     #query_whale_id = row[1]
     img = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
