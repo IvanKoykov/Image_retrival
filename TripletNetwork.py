@@ -1,7 +1,8 @@
 from pathlib import Path
-
+import os
 import numpy as np
 import pandas
+import pandas as pd
 import torch
 import torch.nn as nn
 from PIL import Image
@@ -31,13 +32,13 @@ class TripletNetwork(nn.Module):
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(3, stride=2),
-            nn.Dropout2d(p=0.3),
+            nn.Dropout(p=0.3),
         )
         # Defining the fully connected layers
         self.fc1 = nn.Sequential(
             nn.Linear(43264, 1024),
             nn.ReLU(inplace=True),
-            nn.Dropout2d(p=0.5),
+            nn.Dropout(p=0.5),
             nn.Linear(1024, 128),
             nn.ReLU(inplace=True),
             nn.Linear(128, 2),
@@ -68,17 +69,25 @@ class TripletNetwork(nn.Module):
             output = self.forward_once(input)
         return output
 
-    def generate_embeddings(self, img_dir: Path, labels: Path):
-        df = pandas.read_csv(labels)
+    def generate_embeddings(self, img_dir: str, labels: pd.DataFrame):
+        #df = pandas.read_csv(labels)
         embeddings = []
-        for _, row in tqdm(df.iterrows(), total=df.shape[0], desc="Generating database"):
+        ids = []
+        names = []
+        for _, row in tqdm(labels.iterrows(), total=labels.shape[0], desc="Generating database"):
             filename = row["Image"]
-            img_path = img_dir / filename
+            img_path = os.path.join(img_dir, filename)
             img = Image.open(img_path)
             img = img.convert("L")
             # Apply image transformations
             img_tensor = self.transform(img)
             img_tensor = img_tensor.unsqueeze(0)
-            res = self.forward_once(img_tensor).to('cpu')
-            embeddings.append(res.numpy)
-        return np.array(embeddings)
+            with torch.no_grad():
+                res = self.forward_once(img_tensor).to('cpu')
+            #res = self.forward_once(img_tensor).to('cpu')
+            embeddings.append(res)
+            ids.append(row["Id"])
+            names.append(filename)
+            #embeddings.append(res.numpy)
+        res = [names, ids, embeddings]
+        return res

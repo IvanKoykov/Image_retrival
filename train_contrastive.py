@@ -76,7 +76,7 @@ def train(optimizer, criterion, scheduler):
 
         filenames, whale_ids, embeddings = net.generate_embeddings(img_dir=training_dir, labels=df)
 
-        query_filename_id = df_test.sample(n=1)
+        query_filename_id = df_test
 
         recall_1 = recall_k(filenames, whale_ids, embeddings, transform, net,
                             training_dir, query_filename_id, device, top_n=1)
