@@ -28,14 +28,14 @@ flag='contrastive'
 if flag=='contrastive':
     criterion= ContrastiveLoss()
     model = SiameseNetwork()
-    path_model = 'model/model_contrastive_best.pt'
-    with open('models/embeddings_best_contrastive.pkl', 'rb') as f:
+    path_model = 'models/contrastive/model_contrastive_best.pt'
+    with open('models/contrastive/embeddings_best.pkl', 'rb') as f:
         filenames, whale_ids, embeddings = pickle.load(f)
 else:
     criterion=TripletLoss()
     model=TripletNetwork()
-    path_model = 'model/model_triplet_best.pt'
-    with open('models/embeddings_best_triplet.pkl', 'rb') as f:
+    path_model = 'models/triplet/model_triplet_best.pt'
+    with open('models/triplet/embeddings_best.pkl', 'rb') as f:
         filenames, whale_ids, embeddings = pickle.load(f)
 
 model.load_state_dict(torch.load(path_model))

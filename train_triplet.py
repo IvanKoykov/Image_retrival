@@ -2,7 +2,6 @@ import pickle
 import os.path
 from torch.utils.tensorboard import SummaryWriter
 
-
 import numpy as np
 import pandas as pd
 import torch
@@ -15,14 +14,14 @@ import config
 from Triplet_Dataset import SiameseDataset_Triplet
 from Triplet_loss import TripletLoss
 from TripletNetwork import TripletNetwork
-from utils import imshow,recall_k
+from utils import imshow, recall_k
 
 training_dir = config.images_dir
 training_csv_triplet = config.training_csv_triplet
-testing_csv=config.testing_csv
+testing_csv = config.testing_csv
 
 df = pd.read_csv(training_csv_triplet)
-df_test=pd.read_csv(testing_csv)
+df_test = pd.read_csv(testing_csv)
 numClasses = np.unique(df["Id"])
 
 idx = {
@@ -30,16 +29,16 @@ idx = {
     for i in range(len(numClasses))
 }
 
-transform=transforms.Compose( [transforms.Resize((128, 128)), transforms.ToTensor()] )
-writer = SummaryWriter("logs")
+transform = transforms.Compose([transforms.Resize((128, 128)), transforms.ToTensor()])
+writer = SummaryWriter("logs/triplet", comment="triplet_loss")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 triplet_loss = torch.nn.TripletMarginLoss(margin=1.0, p=2)
 # train the model
-def train(optimizer, criterion,scheduler):
-    #loss = []
-    #counter = []
-    #iteration_number = 0
+def train(optimizer, criterion, scheduler):
+    # loss = []
+    # counter = []
+    # iteration_number = 0
     recall_5_best = -1
     recall_10_best = -1
     best_mean_train_loss = 1000
@@ -49,7 +48,7 @@ def train(optimizer, criterion,scheduler):
             training_dir,
             idx,
             transform=transforms.Compose([
-                transforms.RandomAffine(10),
+                # transforms.RandomAffine(10),
                 transforms.Resize((128, 128)),
                 transforms.ToTensor()
             ]),
@@ -100,21 +99,21 @@ def train(optimizer, criterion,scheduler):
 
         if recall_5 > recall_5_best:
             recall_5_best = recall_5
-            torch.save(net.state_dict(), f"models/model_triplet_best_recall_5.pt")
-            with open(f"models/embeddings_best_recall_5.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/triplet/model_triplet_best_recall_5.pt")
+            with open(f"models/triplet/embeddings_best_recall_5.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         if recall_10 > recall_10_best:
             recall_10_best = recall_10
-            torch.save(net.state_dict(), f"models/model_triplet_best_recall_10.pt")
-            with open(f"models/embeddings_best_recall_10.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/triplet/model_triplet_best_recall_10.pt")
+            with open(f"models/triplet/embeddings_best_recall_10.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         if mean_train_loss < best_mean_train_loss:
             best_mean_train_loss = mean_train_loss
-            torch.save(net.state_dict(), f"models/model_triplet_best.pt")
-            with open(f"models/embeddings_best.pkl", 'wb') as f:
-                pickle.dump(embeddings, f)
+            torch.save(net.state_dict(), f"models/triplet/model_triplet_best.pt")
+            with open(f"models/triplet/embeddings_best.pkl", 'wb') as f:
+                pickle.dump([filenames, whale_ids, embeddings], f)
 
         print(f"Epoch {epoch}\n Current loss {mean_train_loss}\n")
         # iteration_number += 10
@@ -130,8 +129,8 @@ if __name__ == "__main__":
     # Declare Siamese Network
 
     net = TripletNetwork()
-    if os.path.isfile("models/model_triplet_best.pt"):
-        net.load_state_dict(torch.load("models/model_triplet_best.pt"))
+    if os.path.isfile("models/triplet/model_triplet_best.pt"):
+        net.load_state_dict(torch.load("models/triplet/model_triplet_best.pt"))
     net.to(device)
     # Decalre Loss Function
     criterion = TripletLoss()
@@ -140,5 +139,5 @@ if __name__ == "__main__":
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True, patience=5, eps=1e-5)
     # set the device to cuda
 
-    model = train(optimizer, criterion,scheduler)
+    model = train(optimizer, criterion, scheduler)
     print("Model Saved Successfully")
