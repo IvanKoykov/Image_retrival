@@ -34,7 +34,7 @@ transform=transforms.Compose( [transforms.Resize((128, 128)), transforms.ToTenso
 writer = SummaryWriter("logs")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
+triplet_loss = torch.nn.TripletMarginLoss(margin=1.0, p=2)
 # train the model
 def train(optimizer, criterion,scheduler):
     #loss = []
@@ -68,7 +68,8 @@ def train(optimizer, criterion,scheduler):
             img2 = img2.cuda() if device == "cuda" else img2
             optimizer.zero_grad()
             output1, output2, output3 = net(img0, img1, img2)
-            loss_triplet = criterion(output1, output2, output3)
+            #loss_triplet = criterion(output1, output2, output3)
+            loss_triplet = triplet_loss(output1,output2,output3)
             train_losses.append(loss_triplet.item())
             loss_triplet.backward()
             optimizer.step()

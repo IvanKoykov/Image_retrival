@@ -79,6 +79,7 @@ def make_pairs(images, labels, idx):
         negImage = images[np.random.choice(negIdx)]
         # prepare a negative pair of images and update our lists
         pairImages.append([currentImage, negImage])
-        pairLabels.append([0])
+        #Возможно надо ыернуть на 0
+        pairLabels.append([-1])
     # return a 2-tuple of our image pairs and labels
     return np.array(pairImages), np.array(pairLabels)
