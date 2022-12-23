@@ -6,6 +6,7 @@ import pandas
 import pandas as pd
 import torch
 import torch.nn as nn
+from torchvision.models.resnet import resnet50, ResNet50_Weights
 from PIL import Image
 from torchvision.transforms import transforms
 from tqdm import tqdm
@@ -16,47 +17,26 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class SiameseNetwork(nn.Module):
     def __init__(self):
         super(SiameseNetwork, self).__init__()
-        # Setting up the Sequential of CNN Layers
-        self.cnn1 = nn.Sequential(
-            nn.Conv2d(1, 96, kernel_size=11, stride=1),
-            nn.BatchNorm2d(96),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(3, stride=2),
-            nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(3, stride=2),
-            nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(384),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(3, stride=2),
-            nn.Dropout(p=0.3),
+        self.net = resnet50(weights=ResNet50_Weights.DEFAULT)
+        self.net.fc = nn.Sequential(
+            nn.Linear(2048, 256)
         )
-        # Defining the fully connected layers
-        self.fc1 = nn.Sequential(
-            nn.Linear(43264, 1024),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5),
-            nn.Linear(1024, 128),
-            nn.ReLU(inplace=True),
-            nn.Linear(128, 2),
-        )
+        ct = 0
+        for child in self.net.children():
+            ct += 1
+        if ct < 7:
+            for param in child.parameters():
+                param.requires_grad = False
 
         self.transform = transforms.Compose([
-            transforms.Resize((128, 128)),
+            transforms.Resize((224, 224)),
             transforms.ToTensor()
         ])
 
     def forward_once(self, x):
         x = x.to(device)
         # Forward pass
-        output = self.cnn1(x)
-        output = output.view(output.size()[0], -1)
-        # breakpoint()
-        output = self.fc1(output)
+        output = self.net(x)
         return output
 
     def forward(self, input1, input2):
@@ -79,7 +59,7 @@ class SiameseNetwork(nn.Module):
             filename = row["Image"]
             img_path = os.path.join(img_dir, filename)
             img = Image.open(img_path)
-            img = img.convert("L")
+            img = img.convert("RGB")
             # Apply image transformations
             img_tensor = self.transform(img)
             img_tensor = img_tensor.unsqueeze(0)

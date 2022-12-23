@@ -23,7 +23,7 @@ def recall_k(filename, whale_ids, embeddings, transform,
         query_filename = row[0]
         query_whale_id = row[1]
         img = Image.open(os.path.join(images_dir, query_filename))  # Путь до картинки на которую надо найти похожие
-        img = img.convert("L")
+        img = img.convert("RGB")
         # Apply image transformations
         if transform is not None:
             img = transform(img)

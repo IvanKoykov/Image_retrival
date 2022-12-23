@@ -29,7 +29,7 @@ idx = {
     for i in range(len(numClasses))
 }
 
-transform = transforms.Compose([transforms.Resize((128, 128)), transforms.ToTensor()])
+transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
 writer = SummaryWriter("logs/triplet", comment="triplet_loss")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -49,7 +49,7 @@ def train(optimizer, criterion, scheduler):
             idx,
             transform=transforms.Compose([
                 # transforms.RandomAffine(10),
-                transforms.Resize((128, 128)),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor()
             ]),
         )
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     # Decalre Loss Function
     criterion = TripletLoss()
     # Declare Optimizer
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=True, patience=5, eps=1e-5)
     # set the device to cuda
 

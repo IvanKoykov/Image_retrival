@@ -30,8 +30,9 @@ idx = {
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 writer = SummaryWriter("logs/contrastive", comment="contrastive_loss")
-transform = transforms.Compose([transforms.Resize((128, 128)), transforms.ToTensor()])
-contrastiv_loss=torch.nn.MarginRankingLoss()
+contrastiv_loss = torch.nn.MarginRankingLoss().to(device)
+transform = transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor()])
+
 
 # breakpoint()
 # train the model
@@ -49,7 +50,7 @@ def train(optimizer, criterion, scheduler):
             idx,
             transform=transforms.Compose([
                 transforms.RandomAffine(10),
-                transforms.Resize((128, 128)),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor()
             ]),
         )
@@ -67,8 +68,8 @@ def train(optimizer, criterion, scheduler):
             label = label.cuda() if device == "cuda" else label
             optimizer.zero_grad()
             output1, output2 = net(img0, img1)
-            #loss_contrastive = criterion(output1, output2, label)
-            loss_contrastive=contrastiv_loss(output1,output2,label)
+            # loss_contrastive = criterion(output1, output2, label)
+            loss_contrastive = contrastiv_loss(output1, output2, label.to(device))
             train_losses.append(loss_contrastive.item())
             loss_contrastive.backward()
             optimizer.step()

@@ -30,9 +30,9 @@ class SiameseDataset_Triplet(Dataset):
         img0 = Image.open(anchor_path)
         img1 = Image.open(imagePos_path)
         img2 = Image.open(imageNeg_path)
-        img0 = img0.convert("L")
-        img1 = img1.convert("L")
-        img2 = img2.convert("L")
+        img0 = img0.convert("RGB")
+        img1 = img1.convert("RGB")
+        img2 = img2.convert("RGB")
         # Apply image transformations
         if self.transform is not None:
             img0 = self.transform(img0)
